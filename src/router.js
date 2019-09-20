@@ -1,6 +1,8 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 import Home from './views/Home.vue'
+import Encuesta from './views/Encuesta.vue'
+import EditarEncuesta from './views/EditarEncuesta.vue'
 
 Vue.use(Router)
 
@@ -12,6 +14,17 @@ export default new Router({
       path: '/',
       name: 'home',
       component: Home
+    },
+    {
+      path: '/nueva_encuesta',
+      name: 'nueva_encuesta',
+      component: Encuesta
+    },
+    {
+      path: '/editar_encuesta',
+      name: 'editar_encuesta',
+      component: EditarEncuesta, 
+      props: true
     },
     {
       path: '/about',
