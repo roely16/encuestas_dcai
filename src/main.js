@@ -11,10 +11,10 @@ import 'bootstrap-vue/dist/bootstrap-vue.css'
 Vue.use(BootstrapVue)
 
 import { library } from '@fortawesome/fontawesome-svg-core'
-import { faSearch, faPlus, faSave, faTimesCircle, faCloudUploadAlt, faEdit, faTrashAlt, faCog, faCloudDownloadAlt, faInfoCircle } from '@fortawesome/free-solid-svg-icons'
+import { faSearch, faPlus, faSave, faTimesCircle, faCloudUploadAlt, faEdit, faTrashAlt, faCog, faCloudDownloadAlt, faInfoCircle, faSyncAlt, faHome } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 
-library.add(faSearch, faPlus, faSave, faTimesCircle, faCloudUploadAlt, faEdit, faTrashAlt, faCog, faCloudDownloadAlt, faInfoCircle)
+library.add(faSearch, faPlus, faSave, faTimesCircle, faCloudUploadAlt, faEdit, faTrashAlt, faCog, faCloudDownloadAlt, faInfoCircle, faSyncAlt, faHome)
  
 Vue.component('font-awesome-icon', FontAwesomeIcon)
 

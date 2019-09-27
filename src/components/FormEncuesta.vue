@@ -1,6 +1,20 @@
 <template>
 
-    <b-card bg-variant="light" :header="no_encuestas" header-class="font-weight-bold">
+    <b-card bg-variant="light" :header="no_encuestas" header-class="font-weight-bold" v-if="!isLoading">
+
+        <b-row>
+            <b-col>
+                <b-form-group label="No." label-class="font-weight-bold">
+                    {{ encuesta.ID}}
+                </b-form-group>
+            </b-col>
+            <b-col>
+                <b-form-group label="Fecha" label-class="font-weight-bold">
+                    {{ encuesta.FECHA_CREACION}}
+                </b-form-group> 
+            </b-col>
+        </b-row>
+
         <b-form @submit.prevent="registrarEncuesta">
 
             <!-- Creación de preguntas -->
@@ -13,14 +27,7 @@
                         label-for="input-1"
                         label-class="font-weight-bold"
                     >
-                       <!-- <b-form-select v-model="proceso" :options="procesos" v-on:change="seleccionarProceso" required :disabled="uploaded">
-                           <template slot="first">
-                                <option :value="null" disabled>-- Seleccione un proceso --</option>
-                            </template>
-                       </b-form-select> -->
-
-                        <multiselect v-if="mounted" @select="seleccionarProceso" v-model="procesoSelecionado" :options="procesos" :value="procesoSelecionado" label="text" selectLabel="" placeholder="--Seleccione un proceso--" deselectLabel="Eliminar" track-by="text" selectedLabel="Seleccionado" :disabled="uploaded"></multiselect>
-                       
+                        <multiselect @select="seleccionarProceso" v-model="proceso" :options="procesos" :value="proceso" label="text" selectLabel="" placeholder="--Seleccione un proceso--" deselectLabel="Eliminar" track-by="text" selectedLabel="Seleccionado" :disabled="!isEditing"></multiselect>
                     </b-form-group>
                 </b-col>
                 
@@ -34,13 +41,7 @@
                         label-for="input-1"
                         label-class="font-weight-bold"
                     >
-                       <!-- <b-form-select v-model="tecnico" :options="tecnicos" :disabled="tecnicos.length <= 0 || uploaded" required>
-                           <template slot="first">
-                                <option :value="null" disabled>-- Seleccione un técnico --</option>
-                            </template>
-                       </b-form-select> -->
-
-                       <multiselect v-model="tecnico" :options="tecnicos" label="text" selectLabel="" placeholder="--Seleccione un técnico--" track-by="text" selectedLabel="Seleccionado" deselectLabel="" :disabled="tecnicos.length <= 0 || uploaded"  required></multiselect>
+                       <multiselect v-model="tecnico" :value="tecnico" :options="tecnicos" label="text" selectLabel="" placeholder="--Seleccione un técnico--" track-by="text" selectedLabel="Seleccionado" deselectLabel="" :disabled="tecnicos.length <= 0 || !isEditing"  required></multiselect>
                     </b-form-group>
                 </b-col>
             </b-row>
@@ -50,21 +51,21 @@
                     <b-form-group label-class="font-weight-bold" :label="pregunta.text">
                         
                         <b-form-radio-group
-                            v-model="respuestas['pregunta' + (index + 1)]"
+                            v-model="respuestas[(index)].RESPUESTA"
                             :options="options"
                             size="lg"
                             required
                             :name="`pregunta${index}`"
                             v-if="pregunta.type == 'option'"
-                            :disabled="uploaded"
+                            :disabled="!isEditing"
                         ></b-form-radio-group>
 
                         <b-form-textarea
                             rows="4"
                             max-rows="6"
                             v-if="pregunta.type == 'text-area'"
-                            v-model="respuestas['pregunta' + (index + 1)]"
-                            :disabled="uploaded"
+                            v-model="respuestas[(index)].RESPUESTA"
+                            :disabled="!isEditing"
                         ></b-form-textarea>
 
                     </b-form-group>
@@ -73,15 +74,16 @@
 
             <b-row class="text-center">
                 <b-col>
+
                     <b-button v-on:click="cancelarEncuesta" variant="danger" size="lg">Cancelar 
                         <font-awesome-icon icon="times-circle" />
                     </b-button>
-                    <b-button v-if="mode != 'edit'" type="submit" variant="success" style="margin-left: 10px" size="lg">Guardar 
+                    <b-button v-if="isEditing" @click="editarEncuesta" variant="success" style="margin-left: 10px" size="lg">Guardar 
                         <font-awesome-icon icon="save" />
                     </b-button>
 
-                    <b-button v-if="mode == 'edit'" variant="success" style="margin-left: 10px" size="lg" :disabled="uploaded" v-on:click="editarEncuesta">Editar 
-                        <font-awesome-icon icon="save" />
+                    <b-button v-if="!isEditing" variant="primary" style="margin-left: 10px" size="lg" v-on:click="editarEncuesta">Editar 
+                        <font-awesome-icon icon="edit" />
                     </b-button>
                 </b-col>
             </b-row>
@@ -93,10 +95,12 @@
 
 <script>
 
+    import axios from 'axios'
+
     export default {
         data() {
             return {
-                proceso: [],
+                proceso: 3,
                 tecnico: null,
                 options: [
                     { text: '1', value: '1' },
@@ -132,14 +136,15 @@
                         "type": "text-area"
                     }
                 ],
-                respuestas: {
-                },
+                // respuestas: {},
+                respuestas: [],
                 procesos: [],
                 tecnicos: [],
                 no_encuestas: '',
-                uploaded: false,
+                isEditing: false,
                 procesoSelecionado: [],
-                mounted: false
+                encuesta: {},
+                isLoading: false
             } 
         },
         props: {
@@ -149,118 +154,143 @@
         methods: {
             registrarEncuesta(){
 
-                // Obtener la fecha y hora
-                let fecha = moment().format('DD/MM/YYYY HH:mm:ss')
-
-                let nueva_encuesta = {
-                    respuestas: this.respuestas,
-                    fecha: fecha,
-                    upload: false,
-                    id_proceso: this.proceso.value.value,
-                    proceso: this.proceso.text,
-                    id_tecnico: this.tecnico.NIT,
-                    tecnico: this.tecnico.text,
-                    proceso_obj: this.proceso,
-                    tecnico_obj: this.tecnico
-                }
-
-                let encuestas = JSON.parse(localStorage.getItem("encuestas"));
-
-                if (!encuestas) {
-                    encuestas = []
-                }
-
-                encuestas.push(nueva_encuesta)
-
-                localStorage.setItem("encuestas", JSON.stringify(encuestas));
-
-                Swal.fire(
-                    'Excelente!',
-                    'La encuesta ha sigo registrada exitosamente!',
-                    'success'
-                ).then((result) => {
-                    this.$router.push({ name: 'home'})
-                })
-
+                this.isEditing = false
+            
             },
             seleccionarProceso(item){
-                this.proceso = item
-                this.tecnico = null
-                this.tecnicos = item.value.TECNICOS
+                
+                let data = {
+                    name: 'tecnicosProceso',
+                    param: {
+                        id_proceso: item.value
+                    }
+                }
+
+                axios({
+                    method: 'POST',
+                    url: process.env.VUE_APP_API_URL,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    data: data
+                })
+                .then(response => {
+                    
+                    console.log(response.data)
+                    this.tecnico = null
+                    this.tecnicos = response.data.response.result
+                    
+                })
+
+                console.log(data)
             },
             cancelarEncuesta(){
                 this.$router.push({ name: 'home'})
             },
             editarEncuesta(){
 
-                let fecha = moment().format('DD/MM/YYYY HH:mm:ss')
+                this.isEditing = !this.isEditing
 
-                let encuesta_editada = {
-                    respuestas: this.respuestas,
-                    fecha: fecha,
-                    upload: false,
-                    id_proceso: this.proceso.value.value,
-                    proceso: this.proceso.text,
-                    id_tecnico: this.tecnico.NIT,
-                    tecnico: this.tecnico.text,
-                    proceso_obj: this.proceso,
-                    tecnico_obj: this.tecnico
+                if(!this.isEditing){
+                    
+                    let data = {
+
+                        name: 'editarEncuesta',
+                        param: {
+                            encuesta: this.encuesta, 
+                            respuestas: this.respuestas,
+                            proceso: this.proceso, 
+                            tecnico: this.tecnico
+                        }
+
+                    }
+
+                    axios({
+                        method: 'POST',
+                        url: process.env.VUE_APP_API_URL,
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        data: data
+                    })
+                    .then(response => {
+
+                        Swal.fire(
+                            'Excelente!',
+                            'La encuesta ha sigo editada exitosamente!',
+                            'success'
+                        )
+                        console.log(response.data)
+
+                    })
+
                 }
 
-                console.log(encuesta_editada)
-
-                let encuestas = JSON.parse(localStorage.getItem("encuestas"));
-
-                this.$set(encuestas, this.data.index, encuesta_editada)
-
-                localStorage.setItem("encuestas", JSON.stringify(encuestas));
-
-                Swal.fire(
-                    'Excelente!',
-                    'La encuesta ha sigo editada exitosamente!',
-                    'success'
-                ).then((result) => {
-                    this.$router.push({ name: 'home'})
-                })
-
-            },
-            inputOption(value){
-                console.log(value)
             }
+            
         },
         mounted(){
 
-            this.procesos = JSON.parse(localStorage.getItem("procesos"));
+            this.isLoading = !this.isLoading
 
-            console.log(this.procesos)
-
-            if(this.mode == 'edit'){
-
-                this.no_encuestas = "Encuesta No. " + (this.data.index + 1)
-                this.respuestas = this.data.item.respuestas
-
-                this.procesoSelecionado = this.data.item.proceso_obj
-                this.proceso = this.data.item.proceso_obj
-
-                console.log(this.procesoSelecionado)
-
-                this.tecnicos = this.procesoSelecionado.value.TECNICOS
-                this.tecnico = this.data.item.tecnico_obj
-                this.uploaded = this.data.item.upload
-
-            }else{
-
-                let encuestas = JSON.parse(localStorage.getItem("encuestas"));
-
-                if (!encuestas) {
-                    this.no_encuestas = "Encuesta No. 1"
-                }else{
-                    this.no_encuestas = "Encuesta No. " +  (encuestas.length + 1)
+            let data = {
+                name: "detallesEncuesta",
+                param: {
+                    id_encuesta: this.$route.params.id
                 }
-
             }
 
+            axios({
+                method: 'POST',
+                url: process.env.VUE_APP_API_URL,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                data: data
+            })
+            .then(response => {
+                
+                this.procesos = response.data.response.result.procesos
+                this.encuesta = response.data.response.result.encuesta
+                this.respuestas = response.data.response.result.respuestas
+
+                this.tecnico = {
+                    text: this.encuesta.TECNICO,
+                    value: this.encuesta.ID_TECNICO
+                }
+                
+                // this.encuesta.ID_TECNICO
+                this.proceso = {
+                    text: this.encuesta.PROCESO,
+                    value: this.encuesta.ID_PROCESO
+                }
+
+                // Realizar la peticion de los tecnicos
+                let data = {
+                    name: 'tecnicosProceso',
+                    param: {
+                        id_proceso: this.encuesta.ID_PROCESO
+                    }
+                }
+
+                axios({
+                    method: 'POST',
+                    url: process.env.VUE_APP_API_URL,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    data: data
+                })
+                .then(response => {
+                    
+                    this.tecnicos = response.data.response.result
+                    
+                })
+            })
+
             this.mounted = true
+            this.isLoading = !this.isLoading
+        
             
         }
     }

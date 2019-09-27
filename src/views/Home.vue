@@ -14,8 +14,8 @@
 					<font-awesome-icon icon="cloud-upload-alt" />
 				</b-button> -->
 
-				<b-button :to="'nueva_encuesta'" variant="success" :disabled="!procesos_descargados">Nueva Encuesta 
-					<font-awesome-icon icon="plus" />
+				<b-button variant="success" @click="reload"> 
+					<font-awesome-icon icon="sync-alt" />
 				</b-button>
 			</b-col>
 			
@@ -123,6 +123,11 @@
 				
 
 			},
+			reload(){
+
+				this.$root.$emit('actualizarLista');
+
+			}
 		}, 
 		mounted(){
 			let encuestas = JSON.parse(localStorage.getItem("encuestas"))

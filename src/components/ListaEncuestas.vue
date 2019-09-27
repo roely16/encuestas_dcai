@@ -1,9 +1,9 @@
 <template>
     <div>
-		<b-table responsive  :filter="busqueda" :items="items" :fields="fields" show-empty empty-text="No se han registrado encuestas." :per-page="perPage" :current-page="currentPage" id="tabla-encuestas" empty-filtered-text="No se ha encontradod ninguna encuesta que coincida con su busqueda." @filtered="onFiltered">
+		<b-table responsive  :filter="busqueda" :items="items" :fields="fields" show-empty empty-text="No se han registrado encuestas." :per-page="perPage" :current-page="currentPage" id="tabla-encuestas" empty-filtered-text="No se ha encontrado ninguna encuesta que coincida con su busqueda." @filtered="onFiltered">
 			
 			<template slot="index" slot-scope="data">
-				{{ data.index + 1 }}
+				{{ data.item.ID }}
 			</template>
 
 			<template slot="accion" slot-scope="row">
@@ -11,30 +11,29 @@
 					<b-button @click="row.toggleDetails" variant="secondary" >
 						<font-awesome-icon icon="info-circle"  />
 					</b-button>
-					<b-button variant="primary" style="margin-left: 5px" v-on:click="editarEncuesta(row)">
+					<b-button variant="primary" style="margin-left: 5px" :to="{ name: 'editar_encuesta', params: {id: row.item.ID}}">
 						<font-awesome-icon icon="edit"  />
 					</b-button>
-					<b-button variant="danger" v-on:click="eliminarEncuesta(row.index)" style="margin-left: 5px">
+					<b-button variant="danger" v-on:click="eliminarEncuesta(row.item.ID)" style="margin-left: 5px">
 						<font-awesome-icon icon="trash-alt"  />
 					</b-button>
 				</div>
 				
 			</template>
 
-			<template slot="upload" slot-scope="data">
-				<b-badge v-if="data.item.upload == false" variant="success">Local</b-badge>
-				<b-badge v-if="data.item.upload == true" variant="primary">Subida</b-badge>
+			<template slot="upload">
+				<b-badge variant="primary">Subida</b-badge>
 			</template>
 
 			<template slot="row-details" slot-scope="row">
 				<b-card>
 					<b-row class="mb-2">
 						<b-col sm="3" class="text-sm-right"><b>Proceso:</b></b-col>
-						<b-col>{{ row.item.proceso }}</b-col>
+						<b-col>{{ row.item.PROCESO }}</b-col>
 					</b-row>
 					<b-row class="mb-2">
 						<b-col sm="3" class="text-sm-right"><b>Técnico:</b></b-col>
-						<b-col>{{ row.item.tecnico }}</b-col>
+						<b-col>{{ row.item.TECNICO }}</b-col>
 					</b-row>
 
 					<!-- <b-button size="sm" @click="row.toggleDetails">Hide Details</b-button> -->
@@ -50,6 +49,9 @@
 </template>
 
 <script>
+
+	import axios from 'axios'
+
 	export default {
 		data(){
 			return {
@@ -62,7 +64,8 @@
 					},
 					{
 						fecha: {
-							label: "Fecha"
+							label: "Fecha",
+							key: 'FECHA'
 						}
 					},
 					{
@@ -76,26 +79,59 @@
 							label: "Acción",
 							class: "text-right"
 						}
-					}
+					},
 				], 
 				perPage: 10,
 				currentPage: 1,
 				totalRows: 1,
-				busqueda: ''
+				busqueda: '',
 			}
 		},
 		methods: {
 			obtenerEncuestas(){
-				let encuestas = JSON.parse(localStorage.getItem("encuestas"));
+				// let encuestas = JSON.parse(localStorage.getItem("encuestas"));
 
-				if (!encuestas) {
-					encuestas = []
-					this.items = []
-				}else{
-					this.items = encuestas
-				}
+				// if (!encuestas) {
+				// 	encuestas = []
+				// 	this.items = []
+				// }else{
+				// 	this.items = encuestas
+				// }
 
-				this.totalRows = this.items.length
+				// this.totalRows = this.items.length
+
+				let data = {
+                    "name": "listaEncuestas",
+                    "param": {}
+                }
+
+				axios({
+					method: 'POST',
+					url: process.env.VUE_APP_API_URL,
+					headers: {
+                        'Content-Type': 'application/json'
+					},
+					data: data
+                })
+                .then(response => {
+                    
+				   console.log(response.data)
+				   this.items = response.data.response.result
+                    
+                })
+                .catch(error => {
+					
+					console.log(error)
+
+                    this.loading = false
+                    
+                    Swal.fire({
+                        type: 'error',
+                        title: 'Error',
+                        text: 'Existe un problema con su conexión a internet!',
+                    })
+
+				});
 			},
 			editarEncuesta(row){
 
@@ -104,7 +140,7 @@
 				}})
 
 			},
-			eliminarEncuesta(index){
+			eliminarEncuesta(id){
 
 				Swal.fire({
                     title: '¿Está seguro?',
@@ -119,17 +155,36 @@
 
 					if (result.value) {
 
-						this.$delete(this.items, index)
+						console.log(id)
 
-						localStorage.setItem("encuestas", JSON.stringify(this.items));
+						let data = {
+							name: 'eliminarEncuesta',
+							param: {
+								id_encuesta: id
+							}
+						}
 
-						this.$root.$emit('encuestasPendientes');
+						axios({
+							method: 'POST',
+							url: process.env.VUE_APP_API_URL,
+							headers: {
+								'Content-Type': 'application/json'
+							},
+							data: data
+						})
+						.then(response => {
 
-						Swal.fire(
-                            'Excelente!',
-                            'La encuesta han sido eliminada exitosamente.',
-                            'success'
-                        )
+							Swal.fire(
+								'Excelente!',
+								'La encuesta ha sigo eliminada exitosamente!',
+								'success'
+							)
+
+							this.obtenerEncuestas()
+
+							console.log(response.data)
+
+						})
 
 					}
 
@@ -149,7 +204,8 @@
 			})
 
 			this.$root.$on('actualizarLista', () => { 
-				this.items = JSON.parse(localStorage.getItem("encuestas"))
+				// this.items = JSON.parse(localStorage.getItem("encuestas"))
+				this.obtenerEncuestas()
 			})
 
 			// Buscar en lista de encuestas

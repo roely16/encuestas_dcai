@@ -8,8 +8,8 @@
             <b-collapse id="nav-collapse" is-nav>
                 
                 <b-navbar-nav class="ml-auto">
-                    <b-nav-item href="#" v-on:click="mostrarConfig" right>
-                        <font-awesome-icon icon="cog" size="lg" />
+                    <b-nav-item href="http://172.23.25.31/GestionServicios/index.php" right>
+                        <font-awesome-icon icon="home" size="lg" />
                     </b-nav-item>
                 </b-navbar-nav>
 
@@ -253,10 +253,14 @@
 								'Las encuestas han sido subidas exitosamente!',
 								'success'
 							)
+
+                            console.log(data)
 					
 						})
 						.catch(error => {
                             
+                            console.log(error)
+
 							this.uploading = false
 
 							Swal.fire({

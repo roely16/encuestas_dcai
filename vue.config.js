@@ -1,7 +1,7 @@
 const manifestJSON = require('./public/manifest.json')
 
 module.exports = {
-    publicPath: process.env.NODE_ENV === 'production' ? '/apps/app_encuestas/' : '/',
+    publicPath: process.env.NODE_ENV === 'production' ? '/GestionServicios/iso/app_encuestas/' : '/',
     pwa: {
       themeColor: manifestJSON.theme_color,
       name: manifestJSON.short_name,

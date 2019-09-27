@@ -7,7 +7,7 @@ import EditarEncuesta from './views/EditarEncuesta.vue'
 Vue.use(Router)
 
 export default new Router({
-  mode: 'history',
+  // mode: 'history',
   base: process.env.BASE_URL,
   routes: [
     {
@@ -21,7 +21,7 @@ export default new Router({
       component: Encuesta
     },
     {
-      path: '/editar_encuesta',
+      path: '/editar_encuesta/:id',
       name: 'editar_encuesta',
       component: EditarEncuesta, 
       props: true
