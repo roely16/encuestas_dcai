@@ -42,7 +42,7 @@
 
 		</b-table>
 
-		<div class="mt-3" v-if="totalRows > perPage">
+		<div class="mt-3" >
 			<b-pagination v-model="currentPage" :total-rows="totalRows" :per-page="perPage" aria-controls="tabla-encuestas" align="center"></b-pagination>
 		</div>
 	</div>
@@ -117,6 +117,7 @@
                     
 				   console.log(response.data)
 				   this.items = response.data.response.result
+				   this.totalRows = this.items.length
                     
                 })
                 .catch(error => {
