@@ -1,4 +1,6 @@
-# app_encuestas
+# Aplicación de Encuentas DCAI
+
+Aplicación desarrollada utilizando Vue para la toma de encuentas presenciales en la dirección, mediante el uso de tablets. La aplicación funciona sin una conexión a internet y únicamente en el momento que se desee subir las encuestas se requiere la conexión. 
 
 ## Project setup
 ```
